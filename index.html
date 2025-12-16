@@ -1016,10 +1016,7 @@
         </div>
     </div>
 
-    <!-- Mediabunny for audio extraction -->
-    <script type="module">
-        import { Input, Output, Conversion, WavOutputFormat, BlobSource, BufferTarget, ALL_FORMATS } from 'https://esm.sh/mediabunny@0.7.4';
-
+    <script>
         // State
         let audioBlob = null;
         let mediaRecorder = null;
@@ -1029,6 +1026,8 @@
         let audioContext = null;
         let analyser = null;
         let isRecording = false;
+        let mediabunnyLoaded = false;
+        let Mediabunny = null;
 
         // DOM Elements
         const apiKeyInput = document.getElementById('apiKey');
@@ -1205,6 +1204,19 @@
             updateTranscribeButton();
         });
 
+        // Load Mediabunny dynamically
+        async function loadMediabunny() {
+            if (mediabunnyLoaded) return true;
+            try {
+                Mediabunny = await import('https://cdn.jsdelivr.net/npm/mediabunny@0.7.4/+esm');
+                mediabunnyLoaded = true;
+                return true;
+            } catch (err) {
+                console.warn('Failed to load Mediabunny:', err);
+                return false;
+            }
+        }
+
         async function handleFile(file) {
             // Check file size (25MB limit)
             if (file.size > 25 * 1024 * 1024) {
@@ -1222,11 +1234,28 @@
                            file.name.endsWith('.webm');
 
             if (isVideo) {
-                // Extract audio from video using Mediabunny
+                // Try to extract audio from video using Mediabunny
                 processingInfo.classList.add('visible');
+                processingText.textContent = 'Loading audio extraction library...';
+                
+                const loaded = await loadMediabunny();
+                
+                if (!loaded) {
+                    processingInfo.classList.remove('visible');
+                    // Fallback: just use the video file directly (OpenAI API accepts MP4)
+                    audioBlob = file;
+                    const audioUrl = URL.createObjectURL(file);
+                    uploadedAudio.src = audioUrl;
+                    uploadPreview.style.display = 'block';
+                    updateTranscribeButton();
+                    return;
+                }
+                
                 processingText.textContent = 'Extracting audio from video...';
                 
                 try {
+                    const { Input, Output, Conversion, WavOutputFormat, BlobSource, BufferTarget, ALL_FORMATS } = Mediabunny;
+                    
                     const input = new Input({
                         source: new BlobSource(file),
                         formats: ALL_FORMATS,
@@ -1260,7 +1289,12 @@
                     updateTranscribeButton();
                 } catch (err) {
                     processingInfo.classList.remove('visible');
-                    showError('Failed to extract audio from video: ' + err.message);
+                    // Fallback: just use the video file directly
+                    audioBlob = file;
+                    const audioUrl = URL.createObjectURL(file);
+                    uploadedAudio.src = audioUrl;
+                    uploadPreview.style.display = 'block';
+                    updateTranscribeButton();
                 }
             } else {
                 // Direct audio file
