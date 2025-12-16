@@ -882,10 +882,10 @@
                     </div>
                 </label>
                 <label class="model-option">
-                    <input type="radio" name="model" value="gpt-4o-mini-transcribe">
+                    <input type="radio" name="model" value="gpt-4o-mini-transcribe-2025-12-15">
                     <div class="model-card">
-                        <div class="model-name">gpt-4o-mini-transcribe</div>
-                        <div class="model-desc">Fast & efficient</div>
+                        <div class="model-name">gpt-4o-mini-transcribe-2025-12-15</div>
+                        <div class="model-desc">Fast & efficient snapshot</div>
                         <span class="model-badge new">New</span>
                     </div>
                 </label>
@@ -1450,7 +1450,7 @@
         }
 
         // Transcribe a single chunk
-        async function transcribeChunk(blob, model, format, prompt, apiKey, isFirstChunk) {
+        async function transcribeChunk(blob, model, format, prompt, apiKey, isFirstChunk, isDiarize) {
             const formData = new FormData();
             formData.append('file', blob, 'chunk.wav');
             formData.append('model', model);
@@ -1460,11 +1460,11 @@
             formData.append('response_format', chunkFormat);
             
             // Only use prompt for first chunk, then use previous text as context
-            if (prompt && isFirstChunk && model !== 'gpt-4o-transcribe-diarize') {
+            if (prompt && isFirstChunk && !isDiarize) {
                 formData.append('prompt', prompt);
             }
 
-            if (model === 'gpt-4o-transcribe-diarize') {
+            if (isDiarize) {
                 formData.append('chunking_strategy', 'auto');
             }
 
@@ -1496,6 +1496,9 @@
             // Sanitize API key - remove any non-ASCII characters and trim whitespace
             const apiKey = apiKeyInput.value.trim().replace(/[^\x00-\x7F]/g, '');
             const model = document.querySelector('input[name="model"]:checked').value;
+            const isMiniTranscribe = model.startsWith('gpt-4o-mini-transcribe');
+            const isTranscribe = model.startsWith('gpt-4o-transcribe');
+            const isDiarize = model.startsWith('gpt-4o-transcribe-diarize');
             const prompt = promptInput.value.trim();
             const stream = streamToggle.checked;
             let format = responseFormat.value;
@@ -1507,9 +1510,9 @@
             }
 
             // Validate format for model
-            if (model === 'gpt-4o-transcribe-diarize' && format !== 'diarized_json' && format !== 'json' && format !== 'text') {
+            if (isDiarize && format !== 'diarized_json' && format !== 'json' && format !== 'text') {
                 format = 'diarized_json';
-            } else if ((model === 'gpt-4o-transcribe' || model === 'gpt-4o-mini-transcribe') && 
+            } else if ((isTranscribe || isMiniTranscribe) && 
                        (format === 'verbose_json' || format === 'srt' || format === 'vtt')) {
                 format = 'json';
             }
@@ -1537,7 +1540,7 @@
                     for (let i = 0; i < chunks.length; i++) {
                         showStatus('processing', `Transcribing chunk ${i + 1} of ${chunks.length}...`);
                         
-                        const chunkResult = await transcribeChunk(chunks[i].blob, model, format, prompt, apiKey, i === 0);
+                        const chunkResult = await transcribeChunk(chunks[i].blob, model, format, prompt, apiKey, i === 0, isDiarize);
                         
                         if (typeof chunkResult === 'string') {
                             fullText += (fullText ? ' ' : '') + chunkResult;
@@ -1582,11 +1585,11 @@
                         formData.append('response_format', format);
                     }
                     
-                    if (prompt && model !== 'gpt-4o-transcribe-diarize') {
+                    if (prompt && !isDiarize) {
                         formData.append('prompt', prompt);
                     }
 
-                    if (model === 'gpt-4o-transcribe-diarize') {
+                    if (isDiarize) {
                         formData.append('chunking_strategy', 'auto');
                     }
 
