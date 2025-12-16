@@ -874,7 +874,7 @@
                     </div>
                 </label>
                 <label class="model-option">
-                    <input type="radio" name="model" value="gpt-4o-transcribe" checked>
+                    <input type="radio" name="model" value="gpt-4o-transcribe">
                     <div class="model-card">
                         <div class="model-name">gpt-4o-transcribe</div>
                         <div class="model-desc">Higher quality transcription</div>
@@ -882,7 +882,7 @@
                     </div>
                 </label>
                 <label class="model-option">
-                    <input type="radio" name="model" value="gpt-4o-mini-transcribe-2025-12-15">
+                    <input type="radio" name="model" value="gpt-4o-mini-transcribe-2025-12-15" checked>
                     <div class="model-card">
                         <div class="model-name">gpt-4o-mini-transcribe-2025-12-15</div>
                         <div class="model-desc">Fast & efficient snapshot</div>
@@ -1722,8 +1722,12 @@
                     opt.disabled = false;
                 });
                 
-                if (model === 'gpt-4o-transcribe' || model === 'gpt-4o-mini-transcribe') {
-                    // Disable whisper-only formats
+                const isTranscribe = model.startsWith('gpt-4o-transcribe');
+                const isMiniTranscribe = model.startsWith('gpt-4o-mini-transcribe');
+                const isDiarize = model.startsWith('gpt-4o-transcribe-diarize');
+
+                if (isTranscribe || isMiniTranscribe) {
+                    // Disable whisper-only formats and diarized for transcribe models
                     formatSelect.querySelector('option[value="verbose_json"]').disabled = true;
                     formatSelect.querySelector('option[value="srt"]').disabled = true;
                     formatSelect.querySelector('option[value="vtt"]').disabled = true;
@@ -1731,7 +1735,7 @@
                     if (['verbose_json', 'srt', 'vtt', 'diarized_json'].includes(formatSelect.value)) {
                         formatSelect.value = 'json';
                     }
-                } else if (model === 'gpt-4o-transcribe-diarize') {
+                } else if (isDiarize) {
                     // Only json, text, diarized_json for diarize model
                     formatSelect.querySelector('option[value="verbose_json"]').disabled = true;
                     formatSelect.querySelector('option[value="srt"]').disabled = true;
