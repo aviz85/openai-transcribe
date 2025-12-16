@@ -1525,18 +1525,16 @@
             const startTime = Date.now();
 
             try {
-                // Check audio duration and chunk if needed (max ~20 minutes per chunk to be safe)
+                // Always prepare chunks and decide based on count (metadata durations can fail on some files)
                 const MAX_DURATION_SECONDS = 300; // 5 minutes per chunk
-                const audioDuration = await getAudioDuration(audioBlob);
+                const chunks = await splitAudioIntoChunks(audioBlob, MAX_DURATION_SECONDS);
                 
-                let fullText = '';
-                let allSegments = [];
-                
-                if (audioDuration > MAX_DURATION_SECONDS) {
-                    // Need to chunk the audio
-                    const chunks = await splitAudioIntoChunks(audioBlob, MAX_DURATION_SECONDS);
+                if (chunks.length > 1) {
                     showStatus('processing', `Transcribing ${chunks.length} chunks...`);
                     
+                    let fullText = '';
+                    let allSegments = [];
+
                     for (let i = 0; i < chunks.length; i++) {
                         showStatus('processing', `Transcribing chunk ${i + 1} of ${chunks.length}...`);
                         
