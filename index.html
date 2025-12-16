@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Transcribe Tester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #15151f;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --accent-success: #10b981;
+            --accent-error: #ef4444;
+            --accent-warning: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+            --border-active: #4a4a5a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% -20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(129, 140, 248, 0.1), transparent),
+                radial-gradient(ellipse 40% 30% at 50% 50%, rgba(99, 102, 241, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-active);
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 44px;
+        }
+
+        /* Model cards */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .model-option {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .model-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .model-card {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .model-option input:checked + .model-card {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .model-card:hover {
+            border-color: var(--border-active);
+        }
+
+        .model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .model-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .model-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--accent-primary);
+            border-radius: 4px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+        }
+
+        .model-badge.new {
+            background: var(--accent-success);
+        }
+
+        .model-badge.diarize {
+            background: var(--accent-warning);
+        }
+
+        /* Audio input section */
+        .audio-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .audio-tab {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .audio-tab:hover {
+            border-color: var(--border-active);
+            color: var(--text-primary);
+        }
+
+        .audio-tab.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .audio-panel {
+            display: none;
+        }
+
+        .audio-panel.active {
+            display: block;
+        }
+
+        /* Recording UI */
+        .record-container {
+            text-align: center;
+            padding: 32px;
+        }
+
+        .record-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+        }
+
+        .record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(239, 68, 68, 0.4);
+        }
+
+        .record-btn.recording {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .record-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .record-btn:not(.recording)::before {
+            border-radius: 50%;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+            }
+            50% {
+                box-shadow: 0 8px 48px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        .record-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 20px;
+        }
+
+        .record-hint {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 8px;
+        }
+
+        /* Waveform */
+        .waveform-container {
+            height: 60px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .waveform-bar {
+            width: 4px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        /* File upload */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-zone.has-file {
+            border-style: solid;
+            border-color: var(--accent-success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+
+        .file-info.visible {
+            display: flex;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .file-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .file-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-error);
+        }
+
+        /* Audio preview */
+        .audio-preview {
+            margin-top: 16px;
+        }
+
+        .audio-preview audio {
+            width: 100%;
+            height: 48px;
+            border-radius: 8px;
+        }
+
+        /* Transcribe button */
+        .transcribe-btn {
+            width: 100%;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .transcribe-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--accent-glow);
+        }
+
+        .transcribe-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .transcribe-btn.loading .btn-text {
+            display: none;
+        }
+
+        .transcribe-btn .spinner {
+            display: none;
+        }
+
+        .transcribe-btn.loading .spinner {
+            display: block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Results */
+        .result-card {
+            display: none;
+        }
+
+        .result-card.visible {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .result-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .copy-btn.copied {
+            border-color: var(--accent-success);
+            color: var(--accent-success);
+        }
+
+        .result-text {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Diarization segments */
+        .diarized-segments {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .segment {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .segment-speaker {
+            padding: 4px 10px;
+            background: var(--accent-primary);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            height: fit-content;
+        }
+
+        .segment-content {
+            flex: 1;
+        }
+
+        .segment-text {
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .segment-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Error state */
+        .error-message {
+            display: none;
+            padding: 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: var(--accent-error);
+            font-size: 0.875rem;
+            margin-bottom: 16px;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Status indicator */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 16px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status.processing .status-dot {
+            background: var(--accent-warning);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .status.success .status-dot {
+            background: var(--accent-success);
+        }
+
+        .status.error .status-dot {
+            background: var(--accent-error);
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Options section */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .option-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+        }
+
+        .option-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border-color);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            position: absolute;
+            content: '';
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent-primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .audio-tabs {
+                flex-direction: column;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-active);
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            display: none;
+        }
+
+        /* Processing indicator */
+        .processing-info {
+            display: none;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .processing-info.visible {
+            display: block;
+        }
+
+        .processing-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        .processing-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎙️</div>
+                <h1>Transcribe Tester</h1>
+            </div>
+            <p class="subtitle">Test OpenAI's Speech-to-Text API with ease</p>
+        </header>
+
+        <!-- API Configuration -->
+        <div class="card">
+            <div class="card-title">API Configuration</div>
+            <div class="form-group">
+                <label for="apiKey">OpenAI API Key</label>
+                <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Model Selection -->
+        <div class="card">
+            <div class="card-title">Select Model</div>
+            <div class="model-grid">
+                <label class="model-option">
+                    <input type="radio" name="model" value="whisper-1">
+                    <div class="model-card">
+                        <div class="model-name">whisper-1</div>
+                        <div class="model-desc">Original Whisper model</div>
+                        <span class="model-badge">Classic</span>
+                    </div>
+                </label>
+                <label class="model-option">
+                    <input type="radio" name="model" value="gpt-4o-transcribe" checked>
+                    <div class="model-card">
+                        <div class="model-name">gpt-4o-transcribe</div>
+                        <div class="model-desc">Higher quality transcription</div>
+                        <span class="model-badge new">New</span>
+                    </div>
+                </label>
+                <label class="model-option">
+                    <input type="radio" name="model" value="gpt-4o-mini-transcribe">
+                    <div class="model-card">
+                        <div class="model-name">gpt-4o-mini-transcribe</div>
+                        <div class="model-desc">Fast & efficient</div>
+                        <span class="model-badge new">New</span>
+                    </div>
+                </label>
+                <label class="model-option">
+                    <input type="radio" name="model" value="gpt-4o-transcribe-diarize">
+                    <div class="model-card">
+                        <div class="model-name">gpt-4o-transcribe-diarize</div>
+                        <div class="model-desc">Speaker identification</div>
+                        <span class="model-badge diarize">Diarize</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Audio Input -->
+        <div class="card">
+            <div class="card-title">Audio Input</div>
+            
+            <div class="audio-tabs">
+                <button class="audio-tab active" data-tab="record">
+                    <span>🎤</span> Record
+                </button>
+                <button class="audio-tab" data-tab="upload">
+                    <span>📁</span> Upload File
+                </button>
+            </div>
+
+            <!-- Record Panel -->
+            <div class="audio-panel active" id="recordPanel">
+                <div class="record-container">
+                    <button class="record-btn" id="recordBtn" title="Click to start/stop recording"></button>
+                    <div class="record-timer" id="recordTimer">00:00</div>
+                    <div class="record-hint" id="recordHint">Click to start recording</div>
+                    <div class="waveform-container" id="waveform"></div>
+                </div>
+                <div class="audio-preview" id="recordedPreview" style="display: none;">
+                    <audio controls id="recordedAudio"></audio>
+                </div>
+            </div>
+
+            <!-- Upload Panel -->
+            <div class="audio-panel" id="uploadPanel">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-text">Drop your audio/video file here or click to browse</div>
+                    <div class="upload-hint">Supports MP3, WAV, MP4, WEBM, M4A, MPEG, MPGA (max 25MB)</div>
+                </div>
+                <input type="file" id="fileInput" accept=".mp3,.wav,.mp4,.webm,.m4a,.mpeg,.mpga,.ogg">
+                
+                <div class="file-info" id="fileInfo">
+                    <div class="file-icon">🎵</div>
+                    <div class="file-details">
+                        <div class="file-name" id="fileName">filename.mp3</div>
+                        <div class="file-size" id="fileSize">2.4 MB</div>
+                    </div>
+                    <button class="file-remove" id="fileRemove" title="Remove file">✕</button>
+                </div>
+
+                <div class="processing-info" id="processingInfo">
+                    <div class="processing-spinner"></div>
+                    <div class="processing-text" id="processingText">Extracting audio from video...</div>
+                </div>
+
+                <div class="audio-preview" id="uploadPreview" style="display: none;">
+                    <audio controls id="uploadedAudio"></audio>
+                </div>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="card" id="optionsCard">
+            <div class="card-title">Options</div>
+            <div class="form-group">
+                <label for="promptInput">Prompt (optional)</label>
+                <textarea id="promptInput" rows="2" placeholder="Add context to improve transcription accuracy..."></textarea>
+            </div>
+            <div class="options-grid">
+                <div class="option-toggle">
+                    <span class="option-label">Stream Response</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="streamToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="responseFormat">Response Format</label>
+                    <select id="responseFormat">
+                        <option value="json">JSON</option>
+                        <option value="text">Plain Text</option>
+                        <option value="verbose_json">Verbose JSON (whisper-1)</option>
+                        <option value="srt">SRT (whisper-1)</option>
+                        <option value="vtt">VTT (whisper-1)</option>
+                        <option value="diarized_json">Diarized JSON</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transcribe Button -->
+        <button class="transcribe-btn" id="transcribeBtn" disabled>
+            <span class="btn-text">🚀 Transcribe Audio</span>
+            <div class="spinner"></div>
+        </button>
+
+        <!-- Error Message -->
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- Status -->
+        <div class="status" id="statusBar" style="display: none;">
+            <div class="status-dot"></div>
+            <span id="statusText">Ready</span>
+        </div>
+
+        <!-- Results -->
+        <div class="card result-card" id="resultCard">
+            <div class="card-title">Transcription Result</div>
+            <div class="result-header">
+                <div class="result-meta">
+                    <span id="resultModel">📊 Model: gpt-4o-transcribe</span>
+                    <span id="resultDuration">⏱️ Duration: 0s</span>
+                </div>
+                <button class="copy-btn" id="copyBtn">
+                    <span>📋</span> Copy
+                </button>
+            </div>
+            <div class="result-text" id="resultText"></div>
+            <div class="diarized-segments" id="diarizedSegments" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Mediabunny for audio extraction -->
+    <script type="module">
+        import { Input, Output, Conversion, WavOutputFormat, BlobSource, BufferTarget, ALL_FORMATS } from 'https://esm.sh/mediabunny@0.7.4';
+
+        // State
+        let audioBlob = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let timerInterval = null;
+        let audioContext = null;
+        let analyser = null;
+        let isRecording = false;
+
+        // DOM Elements
+        const apiKeyInput = document.getElementById('apiKey');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const recordTimer = document.getElementById('recordTimer');
+        const recordHint = document.getElementById('recordHint');
+        const waveform = document.getElementById('waveform');
+        const recordedPreview = document.getElementById('recordedPreview');
+        const recordedAudio = document.getElementById('recordedAudio');
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileRemove = document.getElementById('fileRemove');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadedAudio = document.getElementById('uploadedAudio');
+        const processingInfo = document.getElementById('processingInfo');
+        const processingText = document.getElementById('processingText');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusBar = document.getElementById('statusBar');
+        const statusText = document.getElementById('statusText');
+        const resultCard = document.getElementById('resultCard');
+        const resultText = document.getElementById('resultText');
+        const resultModel = document.getElementById('resultModel');
+        const resultDuration = document.getElementById('resultDuration');
+        const copyBtn = document.getElementById('copyBtn');
+        const diarizedSegments = document.getElementById('diarizedSegments');
+        const promptInput = document.getElementById('promptInput');
+        const streamToggle = document.getElementById('streamToggle');
+        const responseFormat = document.getElementById('responseFormat');
+
+        // Initialize waveform bars
+        for (let i = 0; i < 40; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'waveform-bar';
+            bar.style.height = '4px';
+            waveform.appendChild(bar);
+        }
+
+        // Tab switching
+        document.querySelectorAll('.audio-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.audio-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.audio-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Panel').classList.add('active');
+            });
+        });
+
+        // Update transcribe button state
+        function updateTranscribeButton() {
+            const hasApiKey = apiKeyInput.value.trim().length > 0;
+            const hasAudio = audioBlob !== null;
+            transcribeBtn.disabled = !hasApiKey || !hasAudio;
+        }
+
+        apiKeyInput.addEventListener('input', updateTranscribeButton);
+
+        // Recording functionality
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Setup audio context for visualization
+                    audioContext = new AudioContext();
+                    analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    source.connect(analyser);
+                    analyser.fftSize = 128;
+                    
+                    // Start recording
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (e) => {
+                        audioChunks.push(e.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        recordedAudio.src = audioUrl;
+                        recordedPreview.style.display = 'block';
+                        updateTranscribeButton();
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.classList.add('recording');
+                    recordHint.textContent = 'Click to stop recording';
+                    recordingStartTime = Date.now();
+                    
+                    // Start timer
+                    timerInterval = setInterval(() => {
+                        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                        const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                        const secs = (elapsed % 60).toString().padStart(2, '0');
+                        recordTimer.textContent = `${mins}:${secs}`;
+                    }, 1000);
+                    
+                    // Start visualization
+                    visualize();
+                    
+                } catch (err) {
+                    showError('Microphone access denied. Please allow microphone access to record.');
+                }
+            } else {
+                // Stop recording
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                recordBtn.classList.remove('recording');
+                recordHint.textContent = 'Click to start recording';
+                clearInterval(timerInterval);
+                
+                // Reset waveform
+                document.querySelectorAll('.waveform-bar').forEach(bar => {
+                    bar.style.height = '4px';
+                });
+            }
+        });
+
+        function visualize() {
+            if (!isRecording) return;
+            
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            
+            const bars = document.querySelectorAll('.waveform-bar');
+            const step = Math.floor(dataArray.length / bars.length);
+            
+            bars.forEach((bar, i) => {
+                const value = dataArray[i * step];
+                const height = Math.max(4, (value / 255) * 50);
+                bar.style.height = `${height}px`;
+            });
+            
+            requestAnimationFrame(visualize);
+        }
+
+        // File upload functionality
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileRemove.addEventListener('click', () => {
+            audioBlob = null;
+            fileInfo.classList.remove('visible');
+            uploadZone.classList.remove('has-file');
+            uploadPreview.style.display = 'none';
+            fileInput.value = '';
+            updateTranscribeButton();
+        });
+
+        async function handleFile(file) {
+            // Check file size (25MB limit)
+            if (file.size > 25 * 1024 * 1024) {
+                showError('File size exceeds 25MB limit.');
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('visible');
+            uploadZone.classList.add('has-file');
+
+            const isVideo = file.type.startsWith('video/') || 
+                           file.name.endsWith('.mp4') || 
+                           file.name.endsWith('.webm');
+
+            if (isVideo) {
+                // Extract audio from video using Mediabunny
+                processingInfo.classList.add('visible');
+                processingText.textContent = 'Extracting audio from video...';
+                
+                try {
+                    const input = new Input({
+                        source: new BlobSource(file),
+                        formats: ALL_FORMATS,
+                    });
+
+                    const target = new BufferTarget();
+                    const output = new Output({
+                        format: new WavOutputFormat(),
+                        target: target,
+                    });
+
+                    const conversion = await Conversion.init({
+                        input,
+                        output,
+                        audio: {
+                            sampleRate: 16000,
+                            numberOfChannels: 1,
+                        },
+                    });
+
+                    await conversion.execute();
+                    
+                    audioBlob = new Blob([target.buffer], { type: 'audio/wav' });
+                    
+                    processingInfo.classList.remove('visible');
+                    
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    uploadedAudio.src = audioUrl;
+                    uploadPreview.style.display = 'block';
+                    
+                    updateTranscribeButton();
+                } catch (err) {
+                    processingInfo.classList.remove('visible');
+                    showError('Failed to extract audio from video: ' + err.message);
+                }
+            } else {
+                // Direct audio file
+                audioBlob = file;
+                const audioUrl = URL.createObjectURL(file);
+                uploadedAudio.src = audioUrl;
+                uploadPreview.style.display = 'block';
+                updateTranscribeButton();
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Transcription
+        transcribeBtn.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value.trim();
+            const model = document.querySelector('input[name="model"]:checked').value;
+            const prompt = promptInput.value.trim();
+            const stream = streamToggle.checked;
+            let format = responseFormat.value;
+
+            // Validate format for model
+            if (model === 'gpt-4o-transcribe-diarize' && format !== 'diarized_json' && format !== 'json' && format !== 'text') {
+                format = 'diarized_json';
+            } else if ((model === 'gpt-4o-transcribe' || model === 'gpt-4o-mini-transcribe') && 
+                       (format === 'verbose_json' || format === 'srt' || format === 'vtt')) {
+                format = 'json';
+            }
+
+            hideError();
+            resultCard.classList.remove('visible');
+            transcribeBtn.classList.add('loading');
+            showStatus('processing', 'Transcribing audio...');
+
+            const startTime = Date.now();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'audio.webm');
+                formData.append('model', model);
+                
+                if (format) {
+                    formData.append('response_format', format);
+                }
+                
+                if (prompt && model !== 'gpt-4o-transcribe-diarize') {
+                    formData.append('prompt', prompt);
+                }
+
+                // For diarization model, add chunking strategy
+                if (model === 'gpt-4o-transcribe-diarize') {
+                    formData.append('chunking_strategy', 'auto');
+                }
+
+                const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'Transcription failed');
+                }
+
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                let result;
+                if (format === 'text' || format === 'srt' || format === 'vtt') {
+                    result = await response.text();
+                } else {
+                    result = await response.json();
+                }
+
+                displayResult(result, model, duration, format);
+                showStatus('success', 'Transcription complete!');
+                
+            } catch (err) {
+                showError(err.message);
+                showStatus('error', 'Transcription failed');
+            } finally {
+                transcribeBtn.classList.remove('loading');
+            }
+        });
+
+        function displayResult(result, model, duration, format) {
+            resultCard.classList.add('visible');
+            resultModel.textContent = `📊 Model: ${model}`;
+            resultDuration.textContent = `⏱️ Duration: ${duration}s`;
+
+            if (format === 'diarized_json' && result.segments) {
+                // Display diarized segments
+                resultText.style.display = 'none';
+                diarizedSegments.style.display = 'block';
+                diarizedSegments.innerHTML = '';
+                
+                result.segments.forEach(segment => {
+                    const segmentEl = document.createElement('div');
+                    segmentEl.className = 'segment';
+                    segmentEl.innerHTML = `
+                        <div class="segment-speaker">${segment.speaker || 'Speaker'}</div>
+                        <div class="segment-content">
+                            <div class="segment-text">${segment.text}</div>
+                            <div class="segment-time">${formatTime(segment.start)} - ${formatTime(segment.end)}</div>
+                        </div>
+                    `;
+                    diarizedSegments.appendChild(segmentEl);
+                });
+            } else {
+                // Display regular text
+                resultText.style.display = 'block';
+                diarizedSegments.style.display = 'none';
+                
+                if (typeof result === 'string') {
+                    resultText.textContent = result;
+                } else if (result.text) {
+                    resultText.textContent = result.text;
+                } else {
+                    resultText.textContent = JSON.stringify(result, null, 2);
+                }
+            }
+        }
+
+        function formatTime(seconds) {
+            if (seconds === undefined) return '--:--';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Copy functionality
+        copyBtn.addEventListener('click', () => {
+            const text = resultText.style.display !== 'none' 
+                ? resultText.textContent 
+                : Array.from(diarizedSegments.querySelectorAll('.segment'))
+                    .map(s => `${s.querySelector('.segment-speaker').textContent}: ${s.querySelector('.segment-text').textContent}`)
+                    .join('\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<span>✓</span> Copied!';
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<span>📋</span> Copy';
+                }, 2000);
+            });
+        });
+
+        // Status and error handling
+        function showStatus(type, text) {
+            statusBar.style.display = 'flex';
+            statusBar.className = `status ${type}`;
+            statusText.textContent = text;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('visible');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('visible');
+        }
+
+        // Model change handler - update response format options
+        document.querySelectorAll('input[name="model"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const model = e.target.value;
+                const formatSelect = responseFormat;
+                
+                // Reset all options
+                Array.from(formatSelect.options).forEach(opt => {
+                    opt.disabled = false;
+                });
+                
+                if (model === 'gpt-4o-transcribe' || model === 'gpt-4o-mini-transcribe') {
+                    // Disable whisper-only formats
+                    formatSelect.querySelector('option[value="verbose_json"]').disabled = true;
+                    formatSelect.querySelector('option[value="srt"]').disabled = true;
+                    formatSelect.querySelector('option[value="vtt"]').disabled = true;
+                    formatSelect.querySelector('option[value="diarized_json"]').disabled = true;
+                    if (['verbose_json', 'srt', 'vtt', 'diarized_json'].includes(formatSelect.value)) {
+                        formatSelect.value = 'json';
+                    }
+                } else if (model === 'gpt-4o-transcribe-diarize') {
+                    // Only json, text, diarized_json for diarize model
+                    formatSelect.querySelector('option[value="verbose_json"]').disabled = true;
+                    formatSelect.querySelector('option[value="srt"]').disabled = true;
+                    formatSelect.querySelector('option[value="vtt"]').disabled = true;
+                    formatSelect.value = 'diarized_json';
+                } else if (model === 'whisper-1') {
+                    // Disable diarized_json for whisper
+                    formatSelect.querySelector('option[value="diarized_json"]').disabled = true;
+                    if (formatSelect.value === 'diarized_json') {
+                        formatSelect.value = 'json';
+                    }
+                }
+            });
+        });
+
+        // Initialize
+        updateTranscribeButton();
+    </script>
+</body>
+</html>
+
