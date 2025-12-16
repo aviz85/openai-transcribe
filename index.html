@@ -1516,7 +1516,7 @@
 
             try {
                 // Check audio duration and chunk if needed (max ~20 minutes per chunk to be safe)
-                const MAX_DURATION_SECONDS = 1200; // 20 minutes
+                const MAX_DURATION_SECONDS = 300; // 5 minutes per chunk
                 const audioDuration = await getAudioDuration(audioBlob);
                 
                 let fullText = '';
