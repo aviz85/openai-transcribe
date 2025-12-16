@@ -1019,6 +1019,7 @@
     <script>
         // State
         let audioBlob = null;
+        let audioFileName = 'audio.webm'; // Track the filename for proper upload
         let mediaRecorder = null;
         let audioChunks = [];
         let recordingStartTime = null;
@@ -1111,6 +1112,7 @@
                     
                     mediaRecorder.onstop = () => {
                         audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        audioFileName = 'recording.webm';
                         const audioUrl = URL.createObjectURL(audioBlob);
                         recordedAudio.src = audioUrl;
                         recordedPreview.style.display = 'block';
@@ -1279,6 +1281,7 @@
                     await conversion.execute();
                     
                     audioBlob = new Blob([target.buffer], { type: 'audio/wav' });
+                    audioFileName = file.name.replace(/\.[^/.]+$/, '') + '.wav';
                     
                     processingInfo.classList.remove('visible');
                     
@@ -1289,16 +1292,18 @@
                     updateTranscribeButton();
                 } catch (err) {
                     processingInfo.classList.remove('visible');
-                    // Fallback: just use the video file directly
+                    // Fallback: just use the video file directly (OpenAI accepts mp4)
                     audioBlob = file;
+                    audioFileName = file.name;
                     const audioUrl = URL.createObjectURL(file);
                     uploadedAudio.src = audioUrl;
                     uploadPreview.style.display = 'block';
                     updateTranscribeButton();
                 }
             } else {
-                // Direct audio file
+                // Direct audio file - preserve original file
                 audioBlob = file;
+                audioFileName = file.name;
                 const audioUrl = URL.createObjectURL(file);
                 uploadedAudio.src = audioUrl;
                 uploadPreview.style.display = 'block';
@@ -1344,7 +1349,8 @@
 
             try {
                 const formData = new FormData();
-                formData.append('file', audioBlob, 'audio.webm');
+                // Use the correct filename to help OpenAI identify the format
+                formData.append('file', audioBlob, audioFileName);
                 formData.append('model', model);
                 
                 if (format) {
