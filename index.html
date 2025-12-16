@@ -1477,8 +1477,15 @@
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Chunk transcription failed');
+                const errorText = await response.text();
+                let msg = 'Chunk transcription failed';
+                try {
+                    const errJson = JSON.parse(errorText);
+                    msg = errJson.error?.message || msg;
+                } catch (_) {
+                    msg = errorText || msg;
+                }
+                throw new Error(msg);
             }
 
             return await response.json();
@@ -1592,8 +1599,15 @@
                     });
 
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error?.message || 'Transcription failed');
+                        const errorText = await response.text();
+                        let msg = 'Transcription failed';
+                        try {
+                            const errJson = JSON.parse(errorText);
+                            msg = errJson.error?.message || msg;
+                        } catch (_) {
+                            msg = errorText || msg;
+                        }
+                        throw new Error(msg);
                     }
 
                     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
